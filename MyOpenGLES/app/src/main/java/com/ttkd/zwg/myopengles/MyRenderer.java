@@ -1,6 +1,7 @@
 package com.ttkd.zwg.myopengles;
 
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -21,6 +22,7 @@ public class MyRenderer implements GLSurfaceView.Renderer {
     private IntBuffer rectColorBuffer;
     private FloatBuffer rectDataBuffer2;
     private FloatBuffer pentacleBuffer;
+    private float rotate;
     private float[] trinagleData=new float[]{
             0.1f,0.6f,0.0f,
             -0.3f,0.0f,0.0f,
@@ -80,7 +82,7 @@ public class MyRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
        /**
         * 关闭抗抖动
-        *用于禁用OpenGL ES某方面的特性。改代码用于关闭抗抖动，这样可以提高性能。
+        *用于禁用OpenGL ES某方面的特性。该代码用于关闭抗抖动，这样可以提高性能。
         */
         gl.glDisable(GL10.GL_DITHER);
 
@@ -165,11 +167,21 @@ public class MyRenderer implements GLSurfaceView.Renderer {
          * 启用顶点颜色数组
          */
          gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
+        /**
+         * 设置当前矩阵堆栈为模型堆栈
+         */
          gl.glMatrixMode(GL10.GL_MODELVIEW);
 
 
 //=============绘制第一个图形==================
+        /**
+         * 重置当前的模型视图矩阵
+         */
          gl.glLoadIdentity();
+        /**
+         * 移动坐标中心到指定点。
+         * 疯狂讲义546
+         */
          gl.glTranslatef(-0.32f,0.35f,-1.2f);
         /**
          * 设置顶点的位置数据。
@@ -187,6 +199,7 @@ public class MyRenderer implements GLSurfaceView.Renderer {
 //=============绘制第二个图形==================
         gl.glLoadIdentity();
         gl.glTranslatef(0.6f,0.8f,-1.5f);
+        gl.glRotatef(rotate,0f,0f,0.1f);
         gl.glVertexPointer(3,GL10.GL_FLOAT,0,rectDataBuffer);
         gl.glColorPointer(4,GL10.GL_FIXED,0,rectColorBuffer);
         gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP,0,4);
@@ -194,26 +207,46 @@ public class MyRenderer implements GLSurfaceView.Renderer {
 //=============绘制第三个图形==================
         gl.glLoadIdentity();
         gl.glTranslatef(-0.4f,-0.5f,-1.5f);
+        gl.glRotatef(rotate,0f,0.2f,0f);
         gl.glVertexPointer(3,GL10.GL_FLOAT,0,rectDataBuffer2);
         gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP,0,4);
 //=============绘制第四个图形==================
         gl.glLoadIdentity();
         gl.glTranslatef(0.4f,-0.5f,-1.5f);
+        /**
+         *使用纯色填充
+         * 注意使用纯色填充，要禁用顶点颜色数组
+         */
         gl.glColor4f(1.0f,0.2f,0.2f,0.0f);
-
+        /**
+         *使用纯色填充
+         * 注意使用纯色填充，要禁用顶点颜色数组
+         */
+        gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
         gl.glVertexPointer(3,GL10.GL_FLOAT,0,pentacleBuffer);
         gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP,0,5);
 
+        /**
+         * 绘制结束
+         */
         gl.glFinish();
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
-    }
+        rotate+=1;
+        Log.i("123","123");
 
+    }
+    /**
+     *该方法为了优化分配一个恰好的内存，所以用ByteBuffer来转化了一下
+     */
     private  FloatBuffer floatBufferUtil(float[] arr){
         FloatBuffer mBuffer;
-        ByteBuffer qbb=ByteBuffer.allocateDirect(arr.length*4);
-        qbb.order(ByteOrder.nativeOrder());
-        mBuffer=qbb.asFloatBuffer();
+        ByteBuffer byteBuffer=ByteBuffer.allocateDirect(arr.length*4);
+        /**
+         *该buffer必须是native buffer，并且该buffer必须是排序的
+         * 疯狂讲义546page
+         */
+        byteBuffer.order(ByteOrder.nativeOrder());
+        mBuffer=byteBuffer.asFloatBuffer();
         mBuffer.put(arr);
         mBuffer.position(0);
         return mBuffer;
